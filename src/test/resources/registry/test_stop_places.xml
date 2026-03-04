@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PublicationDelivery xmlns="http://www.netex.org.uk/netex" version="1.0">
+  <dataObjects>
+    <SiteFrame id="SSR:SiteFrame:1" version="1">
+      <stopPlaces>
+        <StopPlace id="SSR:StopPlace:100" version="1">
+          <quays>
+            <Quay id="SSR:Quay:1001" version="1">
+              <keyList>
+                <KeyValue>
+                  <Key>imported-id</Key>
+                  <Value>014:9022014072021001,014:9022014072021002</Value>
+                </KeyValue>
+              </keyList>
+            </Quay>
+            <Quay id="SSR:Quay:1002" version="1">
+              <keyList>
+                <KeyValue>
+                  <Key>imported-id</Key>
+                  <Value>050:9025050030510001</Value>
+                </KeyValue>
+              </keyList>
+            </Quay>
+            <Quay id="SSR:Quay:1003" version="1">
+              <keyList>
+                <KeyValue>
+                  <Key>some-other-key</Key>
+                  <Value>should-be-ignored</Value>
+                </KeyValue>
+              </keyList>
+            </Quay>
+          </quays>
+        </StopPlace>
+      </stopPlaces>
+    </SiteFrame>
+  </dataObjects>
+</PublicationDelivery>

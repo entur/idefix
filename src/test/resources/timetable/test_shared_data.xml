@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PublicationDelivery xmlns="http://www.netex.org.uk/netex" version="1.0">
+  <dataObjects>
+    <CompositeFrame id="SE:CompositeFrame:1" version="1">
+      <frames>
+        <ServiceFrame id="SE:ServiceFrame:1" version="1">
+          <scheduledStopPoints>
+            <ScheduledStopPoint id="SE:ScheduledStopPoint:1" version="1">
+              <QuayRef ref="SE:014:Quay:9022014072021001" version="1"/>
+            </ScheduledStopPoint>
+            <ScheduledStopPoint id="SE:ScheduledStopPoint:2" version="1">
+              <QuayRef ref="SE:050:Quay:9025050030510001" version="1"/>
+            </ScheduledStopPoint>
+            <ScheduledStopPoint id="SE:ScheduledStopPoint:3" version="1">
+              <QuayRef ref="SE:999:Quay:9999999999999999" version="1"/>
+            </ScheduledStopPoint>
+          </scheduledStopPoints>
+        </ServiceFrame>
+      </frames>
+    </CompositeFrame>
+  </dataObjects>
+</PublicationDelivery>
