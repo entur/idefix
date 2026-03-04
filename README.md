@@ -29,25 +29,3 @@ Set the following environment variables, then run without arguments:
 | `OUTPUT_BUCKET` | GCS bucket for the output ZIP |
 | `OUTPUT_PATH` | Object path within the output bucket |
 
-```sh
-java -jar target/idefix-*-SNAPSHOT.jar
-```
-
-## Docker
-
-```sh
-docker build -t idefix .
-```
-
-Run with GCS:
-
-```sh
-docker run \
-  -e TIMETABLE_BUCKET=my-bucket \
-  -e TIMETABLE_PATH=timetable.zip \
-  -e REGISTRY_BUCKET=my-bucket \
-  -e REGISTRY_PATH=registry.zip \
-  -e OUTPUT_BUCKET=my-bucket \
-  -e OUTPUT_PATH=output.zip \
-  idefix
-```
