@@ -8,6 +8,9 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -19,18 +22,23 @@ class TransformServiceTest {
     Path tempDir;
 
     @Test
-    void shouldRunTransformWithMockFileService() throws Exception {
+    void shouldRunTransformForSingleProvider() throws Exception {
         Path timetableZip = tempDir.resolve("timetable-test.zip");
         Path registryZip = tempDir.resolve("registry-test.zip");
 
         createTimetableTestZip(timetableZip);
         createRegistryTestZip(registryZip);
 
-        Path publishedOutput = tempDir.resolve("published-output.zip");
+        List<Path> publishedOutputs = new ArrayList<>();
 
         FileService fileService = new FileService() {
             @Override
-            public Path getTimetableZip(Path dir) {
+            public List<String> getProviders() {
+                return List.of("testprovider");
+            }
+
+            @Override
+            public Path getTimetableZip(Path dir, String provider) {
                 return timetableZip;
             }
 
@@ -40,24 +48,75 @@ class TransformServiceTest {
             }
 
             @Override
-            public void publishOutput(Path outputZip) throws IOException {
-                Files.copy(outputZip, publishedOutput);
+            public void publishOutput(Path outputZip, String provider) throws IOException {
+                Path dest = tempDir.resolve("published-" + provider + ".zip");
+                Files.copy(outputZip, dest);
+                publishedOutputs.add(dest);
             }
         };
 
-        QuayRefTransformer.TransformResult result = new TransformService().run(fileService);
+        Map<String, QuayRefTransformer.TransformResult> results = new TransformService().run(fileService);
 
-        assertThat(result).isNotNull();
+        assertThat(results).hasSize(1);
+        assertThat(results).containsKey("testprovider");
+        QuayRefTransformer.TransformResult result = results.get("testprovider");
         assertThat(result.matches()).isGreaterThanOrEqualTo(0);
         assertThat(result.misses()).isGreaterThanOrEqualTo(0);
-        assertThat(publishedOutput).exists();
+        assertThat(publishedOutputs).hasSize(1);
+        assertThat(publishedOutputs.get(0)).exists();
+    }
+
+    @Test
+    void shouldRunTransformForMultipleProviders() throws Exception {
+        Path timetableZip = tempDir.resolve("timetable-test.zip");
+        Path registryZip = tempDir.resolve("registry-test.zip");
+
+        createTimetableTestZip(timetableZip);
+        createRegistryTestZip(registryZip);
+
+        List<String> publishedProviders = new ArrayList<>();
+
+        FileService fileService = new FileService() {
+            @Override
+            public List<String> getProviders() {
+                return List.of("providerA", "providerB");
+            }
+
+            @Override
+            public Path getTimetableZip(Path dir, String provider) {
+                return timetableZip;
+            }
+
+            @Override
+            public Path getRegistryZip(Path dir) {
+                return registryZip;
+            }
+
+            @Override
+            public void publishOutput(Path outputZip, String provider) throws IOException {
+                publishedProviders.add(provider);
+                Path dest = tempDir.resolve("published-" + provider + ".zip");
+                Files.copy(outputZip, dest);
+            }
+        };
+
+        Map<String, QuayRefTransformer.TransformResult> results = new TransformService().run(fileService);
+
+        assertThat(results).hasSize(2);
+        assertThat(results).containsKeys("providerA", "providerB");
+        assertThat(publishedProviders).containsExactly("providerA", "providerB");
     }
 
     @Test
     void shouldThrowWhenFileServiceFails() {
         FileService failingService = new FileService() {
             @Override
-            public Path getTimetableZip(Path dir) throws IOException {
+            public List<String> getProviders() {
+                return List.of("failing");
+            }
+
+            @Override
+            public Path getTimetableZip(Path dir, String provider) throws IOException {
                 throw new IOException("download failed");
             }
 
@@ -67,7 +126,7 @@ class TransformServiceTest {
             }
 
             @Override
-            public void publishOutput(Path outputZip) {
+            public void publishOutput(Path outputZip, String provider) {
             }
         };
 

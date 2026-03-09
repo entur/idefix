@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.List;
 
 public class LocalFileService implements FileService {
 
@@ -23,7 +24,16 @@ public class LocalFileService implements FileService {
     }
 
     @Override
-    public Path getTimetableZip(Path tempDir) {
+    public List<String> getProviders() {
+        String filename = timetableZip.getFileName().toString();
+        String provider = filename.endsWith(".zip")
+                ? filename.substring(0, filename.length() - 4)
+                : filename;
+        return List.of(provider);
+    }
+
+    @Override
+    public Path getTimetableZip(Path tempDir, String provider) {
         LOGGER.info("LOCAL mode: using timetable ZIP {}", timetableZip);
         return timetableZip;
     }
@@ -35,7 +45,7 @@ public class LocalFileService implements FileService {
     }
 
     @Override
-    public void publishOutput(Path outputZip) throws IOException {
+    public void publishOutput(Path outputZip, String provider) throws IOException {
         Files.copy(outputZip, outputPath, StandardCopyOption.REPLACE_EXISTING);
         LOGGER.info("Output written to {}", outputPath);
     }

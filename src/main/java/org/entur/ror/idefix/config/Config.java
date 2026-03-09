@@ -1,21 +1,35 @@
 package org.entur.ror.idefix.config;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.List;
+
 public record Config(
         String timetableBucket,
-        String timetablePath,
+        List<String> timetableProviders,
         String registryBucket,
         String registryPath,
-        String outputBucket,
-        String outputPath
+        String outputBucket
 ) {
     public static Config fromEnv() {
         String timetableBucket = requireEnv("TIMETABLE_BUCKET");
-        String timetablePath = requireEnv("TIMETABLE_PATH");
+        List<String> timetableProviders = Arrays.stream(requireEnv("TIMETABLE_PROVIDERS").split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
         String registryBucket = requireEnv("REGISTRY_BUCKET");
         String registryPath = requireEnv("REGISTRY_PATH");
         String outputBucket = requireEnv("OUTPUT_BUCKET");
-        String outputPath = requireEnv("OUTPUT_PATH");
-        return new Config(timetableBucket, timetablePath, registryBucket, registryPath, outputBucket, outputPath);
+        return new Config(timetableBucket, timetableProviders, registryBucket, registryPath, outputBucket);
+    }
+
+    public String timetablePrefix() {
+        return LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd")) + "/timetable/";
+    }
+
+    public String outputPrefix() {
+        return LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd")) + "/timetable/";
     }
 
     private static String requireEnv(String name) {
