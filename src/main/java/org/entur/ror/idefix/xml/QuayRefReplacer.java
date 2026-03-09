@@ -1,5 +1,6 @@
 package org.entur.ror.idefix.xml;
 
+import org.entur.ror.idefix.replacement.QuayRefReplacementResult;
 import org.entur.ror.idefix.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,15 +24,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 
-public class QuayRefTransformer {
+public class QuayRefReplacer {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(QuayRefTransformer.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(QuayRefReplacer.class);
     private static final int PROGRESS_INTERVAL = 100_000;
 
-    public record TransformResult(int matches, int misses) {
-    }
-
-    public TransformResult transform(Path input, Path output, Map<String, String> lookupMap) {
+    public QuayRefReplacementResult replaceQuayRefs(Path input, Path output, Map<String, String> lookupMap) {
         int matches = 0;
         int misses = 0;
         int elementsProcessed = 0;
@@ -60,7 +58,7 @@ public class QuayRefTransformer {
                     case XMLStreamConstants.START_ELEMENT:
                         elementsProcessed++;
                         if (elementsProcessed % PROGRESS_INTERVAL == 0) {
-                            LOGGER.info("Transform progress: {} elements processed, {} matches, {} misses so far",
+                            LOGGER.info("Replacement progress: {} elements processed, {} matches, {} misses so far",
                                     elementsProcessed, matches, misses);
                         }
 
@@ -137,13 +135,13 @@ public class QuayRefTransformer {
             reader.close();
 
         } catch (XMLStreamException e) {
-            throw new RuntimeException("Failed to transform XML", e);
+            throw new RuntimeException("Failed to replace QuayRefs in XML", e);
         } catch (java.io.IOException e) {
             throw new RuntimeException("Failed to read/write XML files", e);
         }
 
-        LOGGER.info("Transform complete: {} matches, {} misses ({} elements processed)", matches, misses, elementsProcessed);
-        return new TransformResult(matches, misses);
+        LOGGER.info("Replacement complete: {} matches, {} misses ({} elements processed)", matches, misses, elementsProcessed);
+        return new QuayRefReplacementResult(matches, misses);
     }
 
 }

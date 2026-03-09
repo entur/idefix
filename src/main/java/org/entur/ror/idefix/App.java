@@ -6,7 +6,7 @@ import org.entur.ror.idefix.file.FileService;
 import org.entur.ror.idefix.file.GcsFileService;
 import org.entur.ror.idefix.file.LocalFileService;
 import org.entur.ror.idefix.gcs.GcsClient;
-import org.entur.ror.idefix.transform.TransformService;
+import org.entur.ror.idefix.replacement.QuayRefReplacementService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +32,7 @@ public class App {
         }
 
         try {
-            new TransformService().run(fileService);
+            new QuayRefReplacementService().run(fileService);
         } catch (Exception e) {
             LOGGER.error("Idefix failed", e);
             System.exit(1);
