@@ -13,14 +13,14 @@ public record Config(
         String outputBucket
 ) {
     public static Config fromEnv() {
-        String timetableBucket = requireEnv("TIMETABLE_BUCKET");
-        List<String> timetableProviders = Arrays.stream(requireEnv("TIMETABLE_PROVIDERS").split(","))
+        String timetableBucket = fromEnv("TIMETABLE_BUCKET");
+        List<String> timetableProviders = Arrays.stream(fromEnv("TIMETABLE_PROVIDERS").split(","))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
                 .toList();
-        String registryBucket = requireEnv("REGISTRY_BUCKET");
-        String registryPath = requireEnv("REGISTRY_PATH");
-        String outputBucket = requireEnv("OUTPUT_BUCKET");
+        String registryBucket = fromEnv("REGISTRY_BUCKET");
+        String registryPath = fromEnv("REGISTRY_PATH");
+        String outputBucket = fromEnv("OUTPUT_BUCKET");
         return new Config(timetableBucket, timetableProviders, registryBucket, registryPath, outputBucket);
     }
 
@@ -32,7 +32,7 @@ public record Config(
         return LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd")) + "/timetable/";
     }
 
-    private static String requireEnv(String name) {
+    private static String fromEnv(String name) {
         String value = System.getenv(name);
         if (value == null || value.isBlank()) {
             throw new IllegalStateException("Required environment variable " + name + " is not set");
