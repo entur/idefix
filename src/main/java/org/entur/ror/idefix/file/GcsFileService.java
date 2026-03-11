@@ -9,17 +9,9 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
-public class GcsFileService implements FileService {
+public record GcsFileService(GcsClient gcsClient, Config config) implements FileService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GcsFileService.class);
-
-    private final GcsClient gcsClient;
-    private final Config config;
-
-    public GcsFileService(GcsClient gcsClient, Config config) {
-        this.gcsClient = gcsClient;
-        this.config = config;
-    }
 
     @Override
     public List<String> getProviders() {

@@ -9,19 +9,9 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 
-public class LocalFileService implements FileService {
+public record LocalFileService(Path timetableZip, Path registryZip, Path outputPath) implements FileService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LocalFileService.class);
-
-    private final Path timetableZip;
-    private final Path registryZip;
-    private final Path outputPath;
-
-    public LocalFileService(Path timetableZip, Path registryZip, Path outputPath) {
-        this.timetableZip = timetableZip;
-        this.registryZip = registryZip;
-        this.outputPath = outputPath;
-    }
 
     @Override
     public List<String> getProviders() {
