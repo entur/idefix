@@ -7,23 +7,22 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 
-public class GcsFileService implements FileService {
+public record GcsFileService(GcsClient gcsClient, Config config) implements FileService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GcsFileService.class);
 
-    private final GcsClient gcsClient;
-    private final Config config;
-
-    public GcsFileService(GcsClient gcsClient, Config config) {
-        this.gcsClient = gcsClient;
-        this.config = config;
+    @Override
+    public List<String> getProviders() {
+        return config.timetableProviders();
     }
 
     @Override
-    public Path getTimetableZip(Path tempDir) {
-        Path destination = tempDir.resolve("timetable.zip");
-        gcsClient.downloadFromGcs(config.timetableBucket(), config.timetablePath(), destination);
+    public Path getTimetableZip(Path tempDir, String provider) {
+        Path destination = tempDir.resolve(provider + ".zip");
+        String objectPath = config.timetablePrefix() + provider + ".zip";
+        gcsClient.downloadFromGcs(config.timetableBucket(), objectPath, destination);
         return destination;
     }
 
@@ -35,8 +34,9 @@ public class GcsFileService implements FileService {
     }
 
     @Override
-    public void publishOutput(Path outputZip) throws IOException {
-        gcsClient.uploadToGcs(config.outputBucket(), config.outputPath(), outputZip);
-        LOGGER.info("Output uploaded to gs://{}/{}", config.outputBucket(), config.outputPath());
+    public void publishOutput(Path outputZip, String provider) throws IOException {
+        String objectPath = config.outputPrefix() + provider + ".zip";
+        gcsClient.uploadToGcs(config.outputBucket(), objectPath, outputZip);
+        LOGGER.info("Output uploaded to gs://{}/{}", config.outputBucket(), objectPath);
     }
 }

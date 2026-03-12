@@ -1,24 +1,39 @@
 package org.entur.ror.idefix.config;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+
+import static java.util.Arrays.stream;
+
 public record Config(
         String timetableBucket,
-        String timetablePath,
+        List<String> timetableProviders,
         String registryBucket,
         String registryPath,
-        String outputBucket,
-        String outputPath
+        String outputBucket
 ) {
     public static Config fromEnv() {
-        String timetableBucket = requireEnv("TIMETABLE_BUCKET");
-        String timetablePath = requireEnv("TIMETABLE_PATH");
-        String registryBucket = requireEnv("REGISTRY_BUCKET");
-        String registryPath = requireEnv("REGISTRY_PATH");
-        String outputBucket = requireEnv("OUTPUT_BUCKET");
-        String outputPath = requireEnv("OUTPUT_PATH");
-        return new Config(timetableBucket, timetablePath, registryBucket, registryPath, outputBucket, outputPath);
+        String timetableBucket = fromEnv("TIMETABLE_BUCKET");
+        List<String> timetableProviders = stream(fromEnv("TIMETABLE_PROVIDERS").split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
+        String registryBucket = fromEnv("REGISTRY_BUCKET");
+        String registryPath = fromEnv("REGISTRY_PATH");
+        String outputBucket = fromEnv("OUTPUT_BUCKET");
+        return new Config(timetableBucket, timetableProviders, registryBucket, registryPath, outputBucket);
     }
 
-    private static String requireEnv(String name) {
+    public String timetablePrefix() {
+        return LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd")) + "/timetable/";
+    }
+
+    public String outputPrefix() {
+        return LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd")) + "/timetable/";
+    }
+
+    private static String fromEnv(String name) {
         String value = System.getenv(name);
         if (value == null || value.isBlank()) {
             throw new IllegalStateException("Required environment variable " + name + " is not set");

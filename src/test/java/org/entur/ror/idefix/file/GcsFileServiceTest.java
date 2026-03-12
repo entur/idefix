@@ -7,9 +7,9 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -17,9 +17,9 @@ import static org.mockito.Mockito.verify;
 class GcsFileServiceTest {
 
     private static final Config CONFIG = new Config(
-            "tt-bucket", "tt-path",
-            "reg-bucket", "reg-path",
-            "out-bucket", "out-path"
+            "timetable-bucket", List.of("provider1", "provider2"),
+            "registry-bucket", "reg-path",
+            "out-bucket"
     );
 
     private final GcsClient gcs = mock(GcsClient.class);
@@ -29,11 +29,19 @@ class GcsFileServiceTest {
     Path tempDir;
 
     @Test
-    void shouldDownloadTimetableZip() {
-        Path result = service.getTimetableZip(tempDir);
+    void shouldReturnConfiguredProviders() {
+        assertThat(service.getProviders()).containsExactly("provider1", "provider2");
+    }
 
-        assertThat(result).isEqualTo(tempDir.resolve("timetable.zip"));
-        verify(gcs).downloadFromGcs(eq("tt-bucket"), eq("tt-path"), eq(result));
+    @Test
+    void shouldDownloadTimetableZipForProvider() {
+        Path result = service.getTimetableZip(tempDir, "provider1");
+
+        assertThat(result).isEqualTo(tempDir.resolve("provider1.zip"));
+        verify(gcs).downloadFromGcs(
+                eq("timetable-bucket"),
+                eq(CONFIG.timetablePrefix() + "provider1.zip"),
+                eq(result));
     }
 
     @Test
@@ -41,15 +49,18 @@ class GcsFileServiceTest {
         Path result = service.getRegistryZip(tempDir);
 
         assertThat(result).isEqualTo(tempDir.resolve("registry.zip"));
-        verify(gcs).downloadFromGcs(eq("reg-bucket"), eq("reg-path"), eq(result));
+        verify(gcs).downloadFromGcs(eq("registry-bucket"), eq("reg-path"), eq(result));
     }
 
     @Test
-    void shouldUploadOutput() throws IOException {
+    void shouldUploadOutputForProvider() throws IOException {
         Path outputZip = tempDir.resolve("output.zip");
 
-        service.publishOutput(outputZip);
+        service.publishOutput(outputZip, "provider1");
 
-        verify(gcs).uploadToGcs(eq("out-bucket"), eq("out-path"), eq(outputZip));
+        verify(gcs).uploadToGcs(
+                eq("out-bucket"),
+                eq(CONFIG.outputPrefix() + "provider1.zip"),
+                eq(outputZip));
     }
 }

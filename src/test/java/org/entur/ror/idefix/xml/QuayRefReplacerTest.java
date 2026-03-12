@@ -1,5 +1,6 @@
 package org.entur.ror.idefix.xml;
 
+import org.entur.ror.idefix.replacement.QuayRefReplacementResult;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -11,7 +12,7 @@ import java.util.Map;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 
-class QuayRefTransformerTest {
+class QuayRefReplacerTest {
 
     @TempDir
     Path tempDir;
@@ -26,8 +27,8 @@ class QuayRefTransformerTest {
                 "050:9025050030510001", "SSR:Quay:1002"
         );
 
-        QuayRefTransformer transformer = new QuayRefTransformer();
-        QuayRefTransformer.TransformResult result = transformer.transform(input, output, lookupMap);
+        QuayRefReplacer replacer = new QuayRefReplacer();
+        QuayRefReplacementResult result = replacer.replaceQuayRefs(input, output, lookupMap);
 
         assertThat(result.matches()).isEqualTo(2);
         assertThat(result.misses()).isEqualTo(1);
@@ -48,8 +49,8 @@ class QuayRefTransformerTest {
                 "014:9022014072021001", "SSR:Quay:1001"
         );
 
-        QuayRefTransformer transformer = new QuayRefTransformer();
-        transformer.transform(input, output, lookupMap);
+        QuayRefReplacer replacer = new QuayRefReplacer();
+        replacer.replaceQuayRefs(input, output, lookupMap);
 
         String content = Files.readString(output);
         assertThat(content)
@@ -65,8 +66,8 @@ class QuayRefTransformerTest {
 
         Map<String, String> lookupMap = emptyMap();
 
-        QuayRefTransformer transformer = new QuayRefTransformer();
-        QuayRefTransformer.TransformResult result = transformer.transform(input, output, lookupMap);
+        QuayRefReplacer replacer = new QuayRefReplacer();
+        QuayRefReplacementResult result = replacer.replaceQuayRefs(input, output, lookupMap);
 
         assertThat(result.matches()).isZero();
         assertThat(result.misses()).isEqualTo(3);

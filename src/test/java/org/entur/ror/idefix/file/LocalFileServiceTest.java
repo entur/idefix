@@ -15,11 +15,19 @@ class LocalFileServiceTest {
     Path tempDir;
 
     @Test
+    void shouldDeriveProviderFromFilename() {
+        LocalFileService service = new LocalFileService(
+                Path.of("/some/blekinge.zip"), Path.of("/reg.zip"), Path.of("/out.zip"));
+
+        assertThat(service.getProviders()).containsExactly("blekinge");
+    }
+
+    @Test
     void shouldReturnTimetableZipDirectly() {
         Path timetableZip = Path.of("/some/timetable.zip");
         LocalFileService service = new LocalFileService(timetableZip, Path.of("/reg.zip"), Path.of("/out.zip"));
 
-        Path result = service.getTimetableZip(tempDir);
+        Path result = service.getTimetableZip(tempDir, "anyprovider");
 
         assertThat(result).isEqualTo(timetableZip);
     }
@@ -42,7 +50,7 @@ class LocalFileServiceTest {
         Path sourceZip = tempDir.resolve("source.zip");
         Files.writeString(sourceZip, "fake zip content");
 
-        service.publishOutput(sourceZip);
+        service.publishOutput(sourceZip, "anyprovider");
 
         assertThat(outputPath).exists();
         assertThat(Files.readString(outputPath)).isEqualTo("fake zip content");
