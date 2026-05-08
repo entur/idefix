@@ -65,6 +65,6 @@ class GcsFileServiceTest {
         verify(gcs).copyInGcs(
                 eq("out-bucket"),
                 eq(CONFIG.aggregatedDatedPath()),
-                eq("sweden_aggregated_latest"));
+                eq(CONFIG.latestAggregatedPath()));
     }
 }

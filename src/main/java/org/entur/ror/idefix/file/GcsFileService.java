@@ -39,7 +39,7 @@ public record GcsFileService(GcsClient gcsClient, Config config) implements File
         gcsClient.uploadToGcs(config.outputBucket(), datedPath, aggregatedZip);
         LOGGER.info("Aggregated output uploaded to gs://{}/{}", config.outputBucket(), datedPath);
 
-        String latestPath = "sweden_aggregated_latest";
+        String latestPath = config.latestAggregatedPath();
         gcsClient.copyInGcs(config.outputBucket(), datedPath, latestPath);
         LOGGER.info("Aggregated output copied to gs://{}/{}", config.outputBucket(), latestPath);
     }

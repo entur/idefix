@@ -37,6 +37,10 @@ public record Config(
         return LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd")) + "/sweden_aggregated.zip";
     }
 
+    public String latestAggregatedPath() {
+        return "sweden_aggregated_latest.zip";
+    }
+
     private static String fromEnv(String name) {
         String value = System.getenv(name);
         if (value == null || value.isBlank()) {
