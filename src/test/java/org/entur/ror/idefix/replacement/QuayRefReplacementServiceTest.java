@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -47,9 +48,9 @@ class QuayRefReplacementServiceTest {
             }
 
             @Override
-            public void publishOutput(Path outputZip, String provider) throws IOException {
-                Path dest = tempDir.resolve("published-" + provider + ".zip");
-                Files.copy(outputZip, dest);
+            public void publishAggregatedOutput(Path aggregatedZip) throws IOException {
+                Path dest = tempDir.resolve("published-aggregated.zip");
+                Files.copy(aggregatedZip, dest);
                 publishedOutputs.add(dest);
             }
         };
@@ -66,14 +67,53 @@ class QuayRefReplacementServiceTest {
     }
 
     @Test
-    void shouldRunReplacementForMultipleProviders() throws Exception {
+    void shouldPublishAggregatedZipWithProviderPrefixedFiles() throws Exception {
         Path timetableZip = tempDir.resolve("timetable-test.zip");
         Path registryZip = tempDir.resolve("registry-test.zip");
 
         createTimetableTestZip(timetableZip);
         createRegistryTestZip(registryZip);
 
-        List<String> publishedProviders = new ArrayList<>();
+        Path publishedAggregated = tempDir.resolve("published-aggregated.zip");
+
+        FileService fileService = new FileService() {
+            @Override
+            public List<String> getProviders() {
+                return List.of("skane");
+            }
+
+            @Override
+            public Path getTimetableZip(Path dir, String provider) {
+                return timetableZip;
+            }
+
+            @Override
+            public Path getRegistryZip(Path dir) {
+                return registryZip;
+            }
+
+            @Override
+            public void publishAggregatedOutput(Path aggregatedZip) throws IOException {
+                Files.copy(aggregatedZip, publishedAggregated);
+            }
+        };
+
+        new QuayRefReplacementService().run(fileService);
+
+        assertThat(publishedAggregated).exists();
+        List<String> entryNames = readZipEntryNames(publishedAggregated);
+        assertThat(entryNames).contains("_stops.xml");
+        assertThat(entryNames).anyMatch(name -> name.startsWith("skane_"));
+        assertThat(entryNames).noneMatch(name -> name.endsWith("_stops.xml") && !name.equals("_stops.xml"));
+    }
+
+    @Test
+    void shouldRunReplacementForMultipleProviders() throws Exception {
+        Path timetableZip = tempDir.resolve("timetable-test.zip");
+        Path registryZip = tempDir.resolve("registry-test.zip");
+
+        createTimetableTestZip(timetableZip);
+        createRegistryTestZip(registryZip);
 
         FileService fileService = new FileService() {
             @Override
@@ -92,10 +132,7 @@ class QuayRefReplacementServiceTest {
             }
 
             @Override
-            public void publishOutput(Path outputZip, String provider) throws IOException {
-                publishedProviders.add(provider);
-                Path dest = tempDir.resolve("published-" + provider + ".zip");
-                Files.copy(outputZip, dest);
+            public void publishAggregatedOutput(Path aggregatedZip) {
             }
         };
 
@@ -103,7 +140,6 @@ class QuayRefReplacementServiceTest {
 
         assertThat(results).hasSize(2);
         assertThat(results).containsKeys("providerA", "providerB");
-        assertThat(publishedProviders).containsExactly("providerA", "providerB");
     }
 
     @Test
@@ -125,7 +161,7 @@ class QuayRefReplacementServiceTest {
             }
 
             @Override
-            public void publishOutput(Path outputZip, String provider) {
+            public void publishAggregatedOutput(Path aggregatedZip) {
             }
         };
 
@@ -148,7 +184,21 @@ class QuayRefReplacementServiceTest {
             zos.putNextEntry(new ZipEntry("test_stop_places.xml"));
             Files.copy(registryXml, zos);
             zos.closeEntry();
+            zos.putNextEntry(new ZipEntry("registry_stops.xml"));
+            zos.write("<stops/>".getBytes());
+            zos.closeEntry();
         }
     }
 
+    private List<String> readZipEntryNames(Path zipFile) throws IOException {
+        List<String> names = new ArrayList<>();
+        try (ZipInputStream zis = new ZipInputStream(Files.newInputStream(zipFile))) {
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                names.add(entry.getName());
+                zis.closeEntry();
+            }
+        }
+        return names;
+    }
 }

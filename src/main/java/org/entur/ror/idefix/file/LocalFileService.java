@@ -35,8 +35,8 @@ public record LocalFileService(Path timetableZip, Path registryZip, Path outputP
     }
 
     @Override
-    public void publishOutput(Path outputZip, String provider) throws IOException {
-        Files.copy(outputZip, outputPath, StandardCopyOption.REPLACE_EXISTING);
-        LOGGER.info("Output written to {}", outputPath);
+    public void publishAggregatedOutput(Path aggregatedZip) throws IOException {
+        Files.copy(aggregatedZip, outputPath, StandardCopyOption.REPLACE_EXISTING);
+        LOGGER.info("Aggregated output written to {}", outputPath);
     }
 }

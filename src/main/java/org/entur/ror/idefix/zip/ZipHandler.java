@@ -61,6 +61,33 @@ public class ZipHandler {
         }
     }
 
+    public void assembleAggregatedZip(Path stopsXml, Map<String, Path> providerZips, Path outputZip) throws IOException {
+        try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(outputZip))) {
+            zos.putNextEntry(new ZipEntry("_stops.xml"));
+            Files.copy(stopsXml, zos);
+            zos.closeEntry();
+
+            for (Map.Entry<String, Path> entry : providerZips.entrySet()) {
+                String provider = entry.getKey();
+                Path providerZip = entry.getValue();
+                try (ZipInputStream zis = new ZipInputStream(Files.newInputStream(providerZip))) {
+                    ZipEntry zipEntry;
+                    while ((zipEntry = zis.getNextEntry()) != null) {
+                        String entryName = zipEntry.getName();
+                        // skip providers stop place file, will use the common stops file
+                        if (!zipEntry.isDirectory() && !entryName.endsWith("_stops.xml")) {
+                            String fileName = Path.of(entryName).getFileName().toString();
+                            zos.putNextEntry(new ZipEntry(provider + "_" + fileName));
+                            zis.transferTo(zos);
+                            zos.closeEntry();
+                        }
+                        zis.closeEntry();
+                    }
+                }
+            }
+        }
+    }
+
     private Path findReplacement(String entryName, Map<String, Path> replacements) {
         for (Map.Entry<String, Path> replacement : replacements.entrySet()) {
             if (entryName.endsWith(replacement.getKey())) {

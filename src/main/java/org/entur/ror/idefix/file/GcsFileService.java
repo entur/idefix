@@ -34,9 +34,13 @@ public record GcsFileService(GcsClient gcsClient, Config config) implements File
     }
 
     @Override
-    public void publishOutput(Path outputZip, String provider) throws IOException {
-        String objectPath = config.outputPrefix() + provider + ".zip";
-        gcsClient.uploadToGcs(config.outputBucket(), objectPath, outputZip);
-        LOGGER.info("Output uploaded to gs://{}/{}", config.outputBucket(), objectPath);
+    public void publishAggregatedOutput(Path aggregatedZip) throws IOException {
+        String datedPath = config.aggregatedDatedPath();
+        gcsClient.uploadToGcs(config.outputBucket(), datedPath, aggregatedZip);
+        LOGGER.info("Aggregated output uploaded to gs://{}/{}", config.outputBucket(), datedPath);
+
+        String latestPath = "sweden_aggregated_latest";
+        gcsClient.copyInGcs(config.outputBucket(), datedPath, latestPath);
+        LOGGER.info("Aggregated output copied to gs://{}/{}", config.outputBucket(), latestPath);
     }
 }

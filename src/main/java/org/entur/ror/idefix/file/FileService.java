@@ -11,5 +11,5 @@ public interface FileService {
 
     Path getRegistryZip(Path tempDir) throws IOException;
 
-    void publishOutput(Path outputZip, String provider) throws IOException;
+    void publishAggregatedOutput(Path aggregatedZip) throws IOException;
 }

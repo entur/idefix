@@ -33,6 +33,10 @@ public record Config(
         return LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd")) + "/timetable/";
     }
 
+    public String aggregatedDatedPath() {
+        return LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd")) + "/sweden_aggregated.zip";
+    }
+
     private static String fromEnv(String name) {
         String value = System.getenv(name);
         if (value == null || value.isBlank()) {

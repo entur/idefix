@@ -37,15 +37,17 @@ public class QuayRefReplacementService {
             LOGGER.info("Processing {} provider(s): {}", providers.size(), providers);
 
             Map<String, QuayRefReplacementResult> results = new LinkedHashMap<>();
+            Map<String, Path> providerOutputZips = new LinkedHashMap<>();
 
             for (String provider : providers) {
                 LOGGER.info("--- Processing provider: {} ---", provider);
                 try {
-                    QuayRefReplacementResult result = replaceQuayRefsForProvider(
+                    ProviderOutput output = replaceQuayRefsForProvider(
                             fileService, zipHandler, lookupMap, tempDir, provider);
-                    results.put(provider, result);
+                    results.put(provider, output.result());
+                    providerOutputZips.put(provider, output.outputZip());
                     LOGGER.info("Provider {}: {} matches, {} misses",
-                            provider, result.matches(), result.misses());
+                            provider, output.result().matches(), output.result().misses());
                 } catch (Exception e) {
                     LOGGER.error("Provider {} failed", provider, e);
                     throw new RuntimeException("Replacement failed for provider: " + provider, e);
@@ -56,6 +58,11 @@ public class QuayRefReplacementService {
             int totalMisses = results.values().stream().mapToInt(QuayRefReplacementResult::misses).sum();
             LOGGER.info("Idefix completed. {} provider(s) processed. Total: {} matches, {} misses.",
                     results.size(), totalMatches, totalMisses);
+
+            Path stopsXml = FileUtils.findStopsXml(registryDir);
+            Path aggregatedZip = tempDir.resolve("aggregated.zip");
+            zipHandler.assembleAggregatedZip(stopsXml, providerOutputZips, aggregatedZip);
+            fileService.publishAggregatedOutput(aggregatedZip);
 
             return results;
         } catch (RuntimeException e) {
@@ -69,7 +76,9 @@ public class QuayRefReplacementService {
         }
     }
 
-    private QuayRefReplacementResult replaceQuayRefsForProvider(
+    private record ProviderOutput(QuayRefReplacementResult result, Path outputZip) {}
+
+    private ProviderOutput replaceQuayRefsForProvider(
             FileService fileService,
             ZipHandler zipHandler,
             Map<String, String> lookupMap,
@@ -94,8 +103,6 @@ public class QuayRefReplacementService {
         Path outputZip = providerDir.resolve("output.zip");
         zipHandler.repackageZip(timetableZip, outputZip, Map.of("_shared_data.xml", replacedFile));
 
-        fileService.publishOutput(outputZip, provider);
-
-        return result;
+        return new ProviderOutput(result, outputZip);
     }
 }

@@ -28,4 +28,15 @@ public class GcsClient {
         BlobInfo blobInfo = BlobInfo.newBuilder(BlobId.of(bucket, path)).build();
         storage.createFrom(blobInfo, source);
     }
+
+    public void copyInGcs(String bucket, String source, String destination) {
+        LOGGER.info("Copying gs://{}/{} to gs://{}/{}", bucket, source, bucket, destination);
+        BlobId sourceBlob = BlobId.of(bucket, source);
+        BlobInfo targetBlob = BlobInfo.newBuilder(BlobId.of(bucket, destination)).build();
+        Storage.CopyRequest copyRequest = Storage.CopyRequest.newBuilder()
+                .setSource(sourceBlob)
+                .setTarget(targetBlob)
+                .build();
+        storage.copy(copyRequest).getResult();
+    }
 }
