@@ -33,6 +33,24 @@ class FileUtilsTest {
     }
 
     @Test
+    void shouldFindStopsXml() throws Exception {
+        Path nested = tempDir.resolve("sub/dir");
+        Files.createDirectories(nested);
+        Path expected = Files.createFile(nested.resolve("tiamat_export.xml"));
+
+        Path result = FileUtils.findStopsXml(tempDir);
+
+        assertThat(result).isEqualTo(expected);
+    }
+
+    @Test
+    void shouldThrowWhenNoStopsXmlExists() {
+        assertThatThrownBy(() -> FileUtils.findStopsXml(tempDir))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("No xml found in registry");
+    }
+
+    @Test
     void shouldCleanUpDirectoryAndContents() throws Exception {
         Path nested = tempDir.resolve("a/b");
         Files.createDirectories(nested);

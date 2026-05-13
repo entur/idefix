@@ -43,14 +43,14 @@ class LocalFileServiceTest {
     }
 
     @Test
-    void shouldCopyOutputToDestination() throws IOException {
+    void shouldCopyAggregatedOutputToDestination() throws IOException {
         Path outputPath = tempDir.resolve("final-output.zip");
         LocalFileService service = new LocalFileService(Path.of("/tt.zip"), Path.of("/reg.zip"), outputPath);
 
         Path sourceZip = tempDir.resolve("source.zip");
         Files.writeString(sourceZip, "fake zip content");
 
-        service.publishOutput(sourceZip, "anyprovider");
+        service.publishAggregatedOutput(sourceZip);
 
         assertThat(outputPath).exists();
         assertThat(Files.readString(outputPath)).isEqualTo("fake zip content");

@@ -22,6 +22,13 @@ public class FileUtils {
                 .orElseThrow(() -> new IllegalStateException("No _shared_data.xml found in timetable"));
     }
 
+    public static Path findStopsXml(Path dir) throws IOException {
+        return Files.walk(dir)
+                .filter(p -> p.getFileName().toString().endsWith(".xml"))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("No xml found in registry"));
+    }
+
     public static void cleanUp(Path dir) {
         try {
             Files.walk(dir)

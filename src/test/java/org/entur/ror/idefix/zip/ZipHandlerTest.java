@@ -68,6 +68,55 @@ class ZipHandlerTest {
                 .containsEntry("file2.txt", "content2");
     }
 
+    @Test
+    void shouldAssembleAggregatedZipWithPrefixedProviderFiles() throws IOException {
+        Path stopsXml = tempDir.resolve("registry_stops.xml");
+        Files.writeString(stopsXml, "<stops/>");
+
+        Path skaneZip = createTestZip("skane.zip", Map.of(
+                "SE_shared_data.xml", "<skane-shared/>",
+                "SE_line_1.xml", "<skane-line/>"
+        ));
+        Path vtZip = createTestZip("vt.zip", Map.of(
+                "_shared_data.xml", "<vt-shared-to-include/>",
+                "_stops.xml", "<vt-stops-to-exclude/>",
+                "line_1.xml", "<vt-line-to-include/>"
+        ));
+
+        Path aggregatedZip = tempDir.resolve("aggregated.zip");
+        new ZipHandler().assembleAggregatedZip(stopsXml, Map.of("skane", skaneZip, "vt", vtZip), aggregatedZip);
+
+        Map<String, String> entries = readZipEntries(aggregatedZip);
+        assertThat(entries)
+                .containsEntry("_stops.xml", "<stops/>")
+                .containsEntry("skane_SE_shared_data.xml", "<skane-shared/>")
+                .containsEntry("skane_SE_line_1.xml", "<skane-line/>")
+                // gets double _ but that's ok so we get a common prefix for all the providers files.
+                .containsEntry("vt__shared_data.xml", "<vt-shared-to-include/>")
+                .containsEntry("vt_line_1.xml", "<vt-line-to-include/>")
+                .doesNotContainKey("vt_stops.xml");
+    }
+
+    @Test
+    void shouldExcludeProviderStopsXmlFromAggregatedZip() throws IOException {
+        Path stopsXml = tempDir.resolve("registry_stops.xml");
+        Files.writeString(stopsXml, "<stops/>");
+
+        Path providerZip = createTestZip("provider.zip", Map.of(
+                "provider_stops.xml", "<provider-stops/>",
+                "provider_shared_data.xml", "<provider-shared/>"
+        ));
+
+        Path aggregatedZip = tempDir.resolve("aggregated.zip");
+        new ZipHandler().assembleAggregatedZip(stopsXml, Map.of("provider", providerZip), aggregatedZip);
+
+        Map<String, String> entries = readZipEntries(aggregatedZip);
+        assertThat(entries)
+                .containsKey("_stops.xml")
+                .containsKey("provider_provider_shared_data.xml")
+                .doesNotContainKey("provider_provider_stops.xml");
+    }
+
     private Path createTestZip(String name, Map<String, String> entries) throws IOException {
         Path zipFile = tempDir.resolve(name);
         try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(zipFile))) {

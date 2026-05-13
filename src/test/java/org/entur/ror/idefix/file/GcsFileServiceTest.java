@@ -53,14 +53,18 @@ class GcsFileServiceTest {
     }
 
     @Test
-    void shouldUploadOutputForProvider() throws IOException {
-        Path outputZip = tempDir.resolve("output.zip");
+    void shouldUploadAggregatedOutputToBothPaths() throws IOException {
+        Path aggregatedZip = tempDir.resolve("aggregated.zip");
 
-        service.publishOutput(outputZip, "provider1");
+        service.publishAggregatedOutput(aggregatedZip);
 
         verify(gcs).uploadToGcs(
                 eq("out-bucket"),
-                eq(CONFIG.outputPrefix() + "provider1.zip"),
-                eq(outputZip));
+                eq(CONFIG.aggregatedDatedPath()),
+                eq(aggregatedZip));
+        verify(gcs).copyInGcs(
+                eq("out-bucket"),
+                eq(CONFIG.aggregatedDatedPath()),
+                eq(CONFIG.latestAggregatedPath()));
     }
 }
