@@ -4,8 +4,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -15,21 +18,48 @@ class LocalFileServiceTest {
     Path tempDir;
 
     @Test
-    void shouldDeriveProviderFromFilename() {
+    void shouldDeriveProviderFromFilename() throws IOException {
+        createZipWithEntry(tempDir.resolve("blekinge.zip"));
         LocalFileService service = new LocalFileService(
-                Path.of("/some/blekinge.zip"), Path.of("/reg.zip"), Path.of("/out.zip"));
+                tempDir, Path.of("/reg.zip"), Path.of("/out.zip"));
 
         assertThat(service.getProviders()).containsExactly("blekinge");
     }
 
     @Test
+    void shouldFilterOutProvidersWithEmptyZip() throws IOException {
+        createEmptyZip(tempDir.resolve("empty.zip"));
+        createZipWithEntry(tempDir.resolve("blekinge.zip"));
+        LocalFileService service = new LocalFileService(
+                tempDir, Path.of("/reg.zip"), Path.of("/out.zip"));
+
+        assertThat(service.getProviders()).containsExactly("blekinge");
+    }
+
+    private void createZipWithEntry(Path zipPath) throws IOException {
+        try (OutputStream fos = Files.newOutputStream(zipPath);
+             ZipOutputStream zos = new ZipOutputStream(fos)) {
+            zos.putNextEntry(new ZipEntry("some-file.txt"));
+            zos.write("content".getBytes());
+            zos.closeEntry();
+        }
+    }
+
+    private void createEmptyZip(Path zipPath) throws IOException {
+        try (OutputStream fos = Files.newOutputStream(zipPath);
+             ZipOutputStream zos = new ZipOutputStream(fos)) {
+            // no entries added
+        }
+    }
+
+    @Test
     void shouldReturnTimetableZipDirectly() {
-        Path timetableZip = Path.of("/some/timetable.zip");
-        LocalFileService service = new LocalFileService(timetableZip, Path.of("/reg.zip"), Path.of("/out.zip"));
+        Path timetablePath = Path.of("/some");
+        LocalFileService service = new LocalFileService(timetablePath, Path.of("/reg.zip"), Path.of("/out.zip"));
 
         Path result = service.getTimetableZip(tempDir, "anyprovider");
 
-        assertThat(result).isEqualTo(timetableZip);
+        assertThat(result).isEqualTo(Path.of("/some/anyprovider.zip"));
     }
 
     @Test

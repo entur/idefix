@@ -15,7 +15,7 @@ the providers name and uses the common stops file from the registry.
 You may run idefix locally by providing the paths to the source files as arguments.
 
 ```sh
-java -jar target/idefix-*-SNAPSHOT.jar <timetable.zip> <registry.zip> [output.zip]
+java -jar target/idefix-*-SNAPSHOT.jar <timetables zips directory> <registry.zip> [output.zip]
 ```
 
 `output.zip` defaults to `output.zip` in the current directory if omitted.

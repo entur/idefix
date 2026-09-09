@@ -169,6 +169,46 @@ class QuayRefReplacementServiceTest {
                 .isInstanceOf(RuntimeException.class);
     }
 
+    @Test
+    void shouldThrowWhenProviderTimetableZipIsEmpty() throws Exception {
+        Path emptyTimetableZip = tempDir.resolve("empty-timetable-test.zip");
+        Path registryZip = tempDir.resolve("registry-test.zip");
+
+        createEmptyZip(emptyTimetableZip);
+        createRegistryTestZip(registryZip);
+
+        FileService fileService = new FileService() {
+            @Override
+            public List<String> getProviders() {
+                return List.of("emptyprovider");
+            }
+
+            @Override
+            public Path getTimetableZip(Path dir, String provider) {
+                return emptyTimetableZip;
+            }
+
+            @Override
+            public Path getRegistryZip(Path dir) {
+                return registryZip;
+            }
+
+            @Override
+            public void publishAggregatedOutput(Path aggregatedZip) {
+            }
+        };
+
+        assertThatThrownBy(() -> new QuayRefReplacementService().run(fileService))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("emptyprovider");
+    }
+
+    private void createEmptyZip(Path zipPath) throws Exception {
+        try (var zos = new java.util.zip.ZipOutputStream(Files.newOutputStream(zipPath))) {
+            // no entries written - produces a valid but empty zip archive
+        }
+    }
+
     private void createTimetableTestZip(Path zipPath) throws Exception {
         Path sharedDataXml = Path.of("src/test/resources/timetable/test_shared_data.xml");
         try (var zos = new java.util.zip.ZipOutputStream(Files.newOutputStream(zipPath))) {
