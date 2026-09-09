@@ -50,14 +50,13 @@ public class QuayRefReplacementService {
                             provider, output.result().matches(), output.result().misses());
                 } catch (Exception e) {
                     LOGGER.error("Provider {} failed", provider, e);
-                    throw new RuntimeException("Replacement failed for provider: " + provider, e);
                 }
             }
 
             int totalMatches = results.values().stream().mapToInt(QuayRefReplacementResult::matches).sum();
             int totalMisses = results.values().stream().mapToInt(QuayRefReplacementResult::misses).sum();
-            LOGGER.info("Idefix completed. {} provider(s) processed. Total: {} matches, {} misses.",
-                    results.size(), totalMatches, totalMisses);
+            LOGGER.info("Idefix completed. {} of {} provider(s) processed. Total: {} matches, {} misses.",
+                    results.size(), providers.size(), totalMatches, totalMisses);
 
             Path stopsXml = FileUtils.findStopsXml(registryDir);
             Path aggregatedZip = tempDir.resolve("aggregated.zip");
