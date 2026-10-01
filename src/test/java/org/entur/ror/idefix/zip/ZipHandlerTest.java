@@ -91,7 +91,6 @@ class ZipHandlerTest {
                 .containsEntry("_stops.xml", "<stops/>")
                 .containsEntry("_skane_shared_data.xml", "<skane-shared/>")
                 .containsEntry("skane_SE_line_1.xml", "<skane-line/>")
-                // gets double _ but that's ok so we get a common prefix for all the providers files.
                 .containsEntry("_vt_shared_data.xml", "<vt-shared-to-include/>")
                 .containsEntry("vt_line_1.xml", "<vt-line-to-include/>")
                 .doesNotContainKey("vt_stops.xml");
