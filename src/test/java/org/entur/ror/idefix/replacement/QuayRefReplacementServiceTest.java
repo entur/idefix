@@ -103,7 +103,7 @@ class QuayRefReplacementServiceTest {
         assertThat(publishedAggregated).exists();
         List<String> entryNames = readZipEntryNames(publishedAggregated);
         assertThat(entryNames).contains("_stops.xml");
-        assertThat(entryNames).anyMatch(name -> name.startsWith("skane_"));
+        assertThat(entryNames).contains("_skane_shared_data.xml");
         assertThat(entryNames).noneMatch(name -> name.endsWith("_stops.xml") && !name.equals("_stops.xml"));
     }
 

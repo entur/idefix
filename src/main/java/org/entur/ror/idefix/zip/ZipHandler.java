@@ -77,7 +77,12 @@ public class ZipHandler {
                         // skip providers stop place file, will use the common stops file
                         if (!zipEntry.isDirectory() && !entryName.endsWith("_stops.xml")) {
                             String fileName = Path.of(entryName).getFileName().toString();
-                            zos.putNextEntry(new ZipEntry(provider + "_" + fileName));
+                            // follow the pattern of the Norwegian timetable files
+                            if (entryName.endsWith("_shared_data.xml")) {
+                                zos.putNextEntry(new ZipEntry("_" + provider + "_shared_data.xml"));
+                            } else {
+                                zos.putNextEntry(new ZipEntry(provider + "_" + fileName));
+                            }
                             zis.transferTo(zos);
                             zos.closeEntry();
                         }
