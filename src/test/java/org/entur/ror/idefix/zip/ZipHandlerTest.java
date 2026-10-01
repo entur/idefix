@@ -89,10 +89,10 @@ class ZipHandlerTest {
         Map<String, String> entries = readZipEntries(aggregatedZip);
         assertThat(entries)
                 .containsEntry("_stops.xml", "<stops/>")
-                .containsEntry("skane_SE_shared_data.xml", "<skane-shared/>")
+                .containsEntry("_skane_shared_data.xml", "<skane-shared/>")
                 .containsEntry("skane_SE_line_1.xml", "<skane-line/>")
                 // gets double _ but that's ok so we get a common prefix for all the providers files.
-                .containsEntry("vt__shared_data.xml", "<vt-shared-to-include/>")
+                .containsEntry("_vt_shared_data.xml", "<vt-shared-to-include/>")
                 .containsEntry("vt_line_1.xml", "<vt-line-to-include/>")
                 .doesNotContainKey("vt_stops.xml");
     }
@@ -113,7 +113,7 @@ class ZipHandlerTest {
         Map<String, String> entries = readZipEntries(aggregatedZip);
         assertThat(entries)
                 .containsKey("_stops.xml")
-                .containsKey("provider_provider_shared_data.xml")
+                .containsKey("_provider_shared_data.xml")
                 .doesNotContainKey("provider_provider_stops.xml");
     }
 
