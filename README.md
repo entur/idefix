@@ -1,36 +1,24 @@
 # idefix
 
 Idefix transforms NeTEx timetable XML by replacing QuayRef references with actual ids from a stop-place registry and
-aggregates the results into one ZIP for OTP consumption.
+aggregates the results into one directory for OTP consumption.
 
 ## How it works
 
-Idefix takes one or more timetable ZIPs and a stop-place registry ZIP as input. It parses the registry to build a
-mapping from imported QuayRef IDs to their canonical IDs, then transforms all matching QuayRef elements in each
-timetable XML. The result is aggregated into a single ZIP file containing all transformed timetable files prefixed with
-the providers name and uses the common stops file from the registry.
+Idefix takes a directory of timetable XMLs (one subdirectory per provider) and a stop-place registry XML file as input. It parses the registry to build a mapping from imported QuayRef IDs to their canonical IDs,
+then transforms all matching QuayRef elements in each provider's `_shared_data.xml`. All timetable files are written to
+the output directory prefixed with the provider's name, together with the registry file as `_stops.xml`. The providers' own `_stops.xml` files are skipped.
 
-## Running idefix locally
+## Running idefix
 
-You may run idefix locally by providing the paths to the source files as arguments.
+All three arguments are required:
 
 ```sh
-java -jar target/idefix-*-SNAPSHOT.jar <timetables zips directory> <registry.zip> [output.zip]
+java -jar target/idefix-*-SNAPSHOT.jar <timetables dir> <registry> <output dir>
 ```
 
-`output.zip` defaults to `output.zip` in the current directory if omitted.
-
-## Running with GCS
-
-Set the following environment variables, then run without arguments:
-
-| Variable              | Description                                                              |
-|-----------------------|--------------------------------------------------------------------------|
-| `TIMETABLE_BUCKET`    | GCS bucket for the timetable ZIPs                                        |
-| `TIMETABLE_PROVIDERS` | Comma-separated list of providers (e.g. `provider1,provider2,provider3`) |
-| `REGISTRY_BUCKET`     | GCS bucket for the registry ZIP                                          |
-| `REGISTRY_PATH`       | Object path within the registry bucket                                   |
-| `OUTPUT_BUCKET`       | GCS bucket for the output ZIPs                                           |
-
-Timetable ZIPs are fetched from `{TIMETABLE_BUCKET}/{YYYY/MM/DD}/timetable/{provider}.zip` using today's date. Output
-ZIPs are uploaded to the same date-based path in `OUTPUT_BUCKET`.
+| Argument           | Description                                                                         |
+|--------------------|-------------------------------------------------------------------------------------|
+| `<timetables dir>` | Directory with one subdirectory of XML files per provider, e.g. `timetables/skane/` |
+| `<registry>`       | Stop-place registry XML file                                                        |
+| `<output dir>`     | Directory the result is written to. Created if missing; existing files are replaced |

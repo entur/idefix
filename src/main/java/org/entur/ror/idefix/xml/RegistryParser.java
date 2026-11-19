@@ -7,9 +7,7 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
-import java.io.File;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,22 +20,14 @@ public class RegistryParser extends DefaultHandler {
     private boolean importedIdKeyFound;
     private StringBuilder charBuffer;
 
-    public Map<String, String> parse(Path registryDir) {
-        File[] xmlFiles = registryDir.toFile().listFiles((dir, name) -> name.endsWith(".xml"));
-        if (xmlFiles == null || xmlFiles.length == 0) {
-            LOGGER.warn("No XML files found in registry directory: {}", registryDir);
-            return Collections.emptyMap();
-        }
-
+    public Map<String, String> parse(Path registryXml) {
         try {
             SAXParserFactory factory = SAXParserFactory.newInstance();
             factory.setNamespaceAware(true);
             SAXParser saxParser = factory.newSAXParser();
 
-            for (File xmlFile : xmlFiles) {
-                LOGGER.info("Parsing registry file: {}", xmlFile.getName());
-                saxParser.parse(xmlFile, this);
-            }
+            LOGGER.info("Parsing registry file: {}", registryXml);
+            saxParser.parse(registryXml.toFile(), this);
         } catch (Exception e) {
             throw new RuntimeException("Failed to parse registry XML", e);
         }
