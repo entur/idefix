@@ -37,13 +37,12 @@ class AppArgumentsTest {
 
     @Test
     void shouldRejectInvalidPaths() throws Exception {
-        Path zip = Files.writeString(tempDir.resolve("registry.zip"), "");
         Path outFile = Files.writeString(tempDir.resolve("out.txt"), "");
 
         assertThatThrownBy(() -> AppArguments.parse(new String[]{
-                tempDir.resolve("missing").toString(), zip.toString(), outFile.toString()}))
+                tempDir.resolve("missing").toString(), "tiamat-export.xml", outFile.toString()}))
                 .hasMessageContaining("<timetables dir> is not an existing directory")
-                .hasMessageContaining("<registry> must be an XML file")
+                .hasMessageContaining("<registry> is not an existing file")
                 .hasMessageContaining("<output dir> exists but is not a directory");
     }
 
