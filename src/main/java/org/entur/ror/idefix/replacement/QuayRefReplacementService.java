@@ -1,15 +1,15 @@
 package org.entur.ror.idefix.replacement;
 
-import org.entur.ror.idefix.file.FileService;
 import org.entur.ror.idefix.utils.FileUtils;
 import org.entur.ror.idefix.xml.QuayRefReplacer;
 import org.entur.ror.idefix.xml.RegistryParser;
-import org.entur.ror.idefix.zip.ZipHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,36 +18,27 @@ public class QuayRefReplacementService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(QuayRefReplacementService.class);
 
-    public Map<String, QuayRefReplacementResult> run(FileService fileService) {
-        Path tempDir = null;
+    public Map<String, QuayRefReplacementResult> run(Path timetablesDir, Path registryXml, Path outputDir) {
         try {
-            tempDir = Files.createTempDirectory("idefix-");
-            LOGGER.info("Working directory: {}", tempDir);
+            Files.createDirectories(outputDir);
 
-            ZipHandler zipHandler = new ZipHandler();
-            RegistryParser registryParser = new RegistryParser();
-
-            Path registryZip = fileService.getRegistryZip(tempDir);
-            Path registryDir = tempDir.resolve("registry");
-            zipHandler.extractZip(registryZip, registryDir);
-            Map<String, String> lookupMap = registryParser.parse(registryDir);
+            Map<String, String> lookupMap = new RegistryParser().parse(registryXml);
             LOGGER.info("Loaded {} imported-id mappings from registry", lookupMap.size());
 
-            List<String> providers = fileService.getProviders();
-            LOGGER.info("Processing {} provider(s): {}", providers.size(), providers);
+            List<Path> providerDirs = FileUtils.listSubdirectories(timetablesDir).stream()
+                    .filter(this::containsXml)
+                    .toList();
+            LOGGER.info("Processing {} provider(s): {}", providerDirs.size(),
+                    providerDirs.stream().map(QuayRefReplacementService::providerName).toList());
 
             Map<String, QuayRefReplacementResult> results = new LinkedHashMap<>();
-            Map<String, Path> providerOutputZips = new LinkedHashMap<>();
-
-            for (String provider : providers) {
+            for (Path providerDir : providerDirs) {
+                String provider = providerName(providerDir);
                 LOGGER.info("--- Processing provider: {} ---", provider);
                 try {
-                    ProviderOutput output = replaceQuayRefsForProvider(
-                            fileService, zipHandler, lookupMap, tempDir, provider);
-                    results.put(provider, output.result());
-                    providerOutputZips.put(provider, output.outputZip());
-                    LOGGER.info("Provider {}: {} matches, {} misses",
-                            provider, output.result().matches(), output.result().misses());
+                    QuayRefReplacementResult result = processProvider(providerDir, provider, lookupMap, outputDir);
+                    results.put(provider, result);
+                    LOGGER.info("Provider {}: {} matches, {} misses", provider, result.matches(), result.misses());
                 } catch (Exception e) {
                     LOGGER.error("Provider {} failed", provider, e);
                 }
@@ -56,52 +47,56 @@ public class QuayRefReplacementService {
             int totalMatches = results.values().stream().mapToInt(QuayRefReplacementResult::matches).sum();
             int totalMisses = results.values().stream().mapToInt(QuayRefReplacementResult::misses).sum();
             LOGGER.info("Idefix completed. {} of {} provider(s) processed. Total: {} matches, {} misses.",
-                    results.size(), providers.size(), totalMatches, totalMisses);
+                    results.size(), providerDirs.size(), totalMatches, totalMisses);
 
-            Path stopsXml = FileUtils.findStopsXml(registryDir);
-            Path aggregatedZip = tempDir.resolve("aggregated.zip");
-            zipHandler.assembleAggregatedZip(stopsXml, providerOutputZips, aggregatedZip);
-            fileService.publishAggregatedOutput(aggregatedZip);
+            Files.copy(registryXml, outputDir.resolve("_stops.xml"), StandardCopyOption.REPLACE_EXISTING);
+            LOGGER.info("Output written to {}", outputDir);
 
             return results;
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
             throw new RuntimeException("Replacement failed", e);
-        } finally {
-            if (tempDir != null) {
-                FileUtils.cleanUp(tempDir);
-            }
         }
     }
 
-    private record ProviderOutput(QuayRefReplacementResult result, Path outputZip) {}
-
-    private ProviderOutput replaceQuayRefsForProvider(
-            FileService fileService,
-            ZipHandler zipHandler,
-            Map<String, String> lookupMap,
-            Path tempDir,
-            String provider) throws Exception {
-
-        QuayRefReplacer replacer = new QuayRefReplacer();
-
-        Path providerDir = tempDir.resolve("provider-" + provider);
-        Files.createDirectories(providerDir);
-
-        Path timetableZip = fileService.getTimetableZip(providerDir, provider);
-
-        Path timetableDir = providerDir.resolve("timetable");
-        zipHandler.extractZip(timetableZip, timetableDir);
-        Path sharedDataXml = FileUtils.findSharedDataXml(timetableDir);
+    private QuayRefReplacementResult processProvider(
+            Path providerDir, String provider, Map<String, String> lookupMap, Path outputDir) throws IOException {
+        List<Path> xmlFiles = FileUtils.listXmlFiles(providerDir);
+        Path sharedDataXml = xmlFiles.stream()
+                .filter(p -> p.getFileName().toString().endsWith("_shared_data.xml"))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("No _shared_data.xml found in timetable"));
         LOGGER.info("Found shared data file: {}", sharedDataXml);
 
-        Path replacedFile = providerDir.resolve("replaced_shared_data.xml");
-        QuayRefReplacementResult result = replacer.replaceQuayRefs(sharedDataXml, replacedFile, lookupMap);
+        // follow the pattern of the Norwegian timetable files
+        QuayRefReplacementResult result = new QuayRefReplacer().replaceQuayRefs(
+                sharedDataXml, outputDir.resolve("_" + provider + "_shared_data.xml"), lookupMap);
 
-        Path outputZip = providerDir.resolve("output.zip");
-        zipHandler.repackageZip(timetableZip, outputZip, Map.of("_shared_data.xml", replacedFile));
+        for (Path xmlFile : xmlFiles) {
+            String fileName = xmlFile.getFileName().toString();
+            // skip the provider's stop place file, the common stops file from the registry is used instead
+            if (xmlFile.equals(sharedDataXml) || fileName.endsWith("_stops.xml")) {
+                continue;
+            }
+            Files.copy(xmlFile, outputDir.resolve(provider + "_" + fileName), StandardCopyOption.REPLACE_EXISTING);
+        }
+        return result;
+    }
 
-        return new ProviderOutput(result, outputZip);
+    private boolean containsXml(Path providerDir) {
+        try {
+            if (FileUtils.listXmlFiles(providerDir).isEmpty()) {
+                LOGGER.warn("Skipping provider directory without XML files: {}", providerDir);
+                return false;
+            }
+            return true;
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to list XML files in " + providerDir, e);
+        }
+    }
+
+    private static String providerName(Path providerDir) {
+        return providerDir.getFileName().toString();
     }
 }

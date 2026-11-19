@@ -7,7 +7,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class FileUtilsTest {
 
@@ -15,59 +14,27 @@ class FileUtilsTest {
     Path tempDir;
 
     @Test
-    void shouldFindSharedDataXml() throws Exception {
-        Path nested = tempDir.resolve("sub/dir");
-        Files.createDirectories(nested);
-        Path expected = Files.createFile(nested.resolve("test_shared_data.xml"));
+    void shouldListXmlFilesRecursively() throws Exception {
+        Path nested = Files.createDirectories(tempDir.resolve("sub/dir"));
+        Path xml = Files.createFile(nested.resolve("a.xml"));
+        Files.createFile(nested.resolve("b.txt"));
 
-        Path result = FileUtils.findSharedDataXml(tempDir);
-
-        assertThat(result).isEqualTo(expected);
+        assertThat(FileUtils.listXmlFiles(tempDir)).containsExactly(xml);
     }
 
     @Test
-    void shouldThrowWhenNoSharedDataXmlExists() {
-        assertThatThrownBy(() -> FileUtils.findSharedDataXml(tempDir))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("No _shared_data.xml found in timetable");
+    void shouldListSingleFile() throws Exception {
+        Path xml = Files.createFile(tempDir.resolve("a.xml"));
+
+        assertThat(FileUtils.listXmlFiles(xml)).containsExactly(xml);
     }
 
     @Test
-    void shouldFindStopsXml() throws Exception {
-        Path nested = tempDir.resolve("sub/dir");
-        Files.createDirectories(nested);
-        Path expected = Files.createFile(nested.resolve("tiamat_export.xml"));
+    void shouldListSubdirectories() throws Exception {
+        Path b = Files.createDirectories(tempDir.resolve("b"));
+        Path a = Files.createDirectories(tempDir.resolve("a"));
+        Files.createFile(tempDir.resolve("c.xml"));
 
-        Path result = FileUtils.findStopsXml(tempDir);
-
-        assertThat(result).isEqualTo(expected);
-    }
-
-    @Test
-    void shouldThrowWhenNoStopsXmlExists() {
-        assertThatThrownBy(() -> FileUtils.findStopsXml(tempDir))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("No xml found in registry");
-    }
-
-    @Test
-    void shouldCleanUpDirectoryAndContents() throws Exception {
-        Path nested = tempDir.resolve("a/b");
-        Files.createDirectories(nested);
-        Files.createFile(nested.resolve("file.txt"));
-
-        Path target = tempDir.resolve("a");
-        FileUtils.cleanUp(target);
-
-        assertThat(target).doesNotExist();
-    }
-
-    @Test
-    void shouldNotThrowWhenCleaningUpNonExistentDirectory() {
-        Path nonExistent = tempDir.resolve("does-not-exist");
-
-        FileUtils.cleanUp(nonExistent);
-
-        assertThat(nonExistent).doesNotExist();
+        assertThat(FileUtils.listSubdirectories(tempDir)).containsExactly(a, b);
     }
 }
