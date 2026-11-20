@@ -9,16 +9,7 @@ public class App {
     private static final Logger LOGGER = LoggerFactory.getLogger(App.class);
 
     public static void main(String[] args) {
-        AppArguments arguments;
-        try {
-            arguments = AppArguments.parse(args);
-        } catch (AppArguments.InvalidArgumentsException e) {
-            System.err.println(e.getMessage());
-            System.err.println();
-            System.err.println(AppArguments.USAGE);
-            System.exit(2);
-            return;
-        }
+        AppArguments arguments = AppArguments.parseOrExit(args);
 
         LOGGER.info("Starting Idefix...");
         try {

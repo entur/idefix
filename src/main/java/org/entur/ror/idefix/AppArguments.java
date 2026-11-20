@@ -15,6 +15,19 @@ public record AppArguments(Path timetablesDir, Path registryXml, Path outputDir)
               <registry>        Stop-place registry XML file.
               <output dir>      Directory the transformed XML files are written to. Created if missing.""";
 
+    public static AppArguments parseOrExit(String[] args) {
+        try {
+            return parse(args);
+        } catch (InvalidArgumentsException e) {
+            System.err.println(e.getMessage());
+            System.err.println();
+            System.err.println(USAGE);
+            System.exit(2);
+            // unreachable, but required by the compiler since System.exit is not known to terminate
+            throw e;
+        }
+    }
+
     public static AppArguments parse(String[] args) {
         List<String> errors = new ArrayList<>();
         if (args.length < 1) errors.add("Missing argument: <timetables dir>");
