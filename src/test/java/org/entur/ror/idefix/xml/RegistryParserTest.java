@@ -13,7 +13,7 @@ class RegistryParserTest {
 
     @Test
     void shouldParseRegistryAndBuildLookupMap() throws URISyntaxException {
-        Path registryDir = Paths.get(getClass().getClassLoader().getResource("registry").toURI());
+        Path registryDir = Paths.get(getClass().getClassLoader().getResource("registry/test_stop_places.xml").toURI());
 
         RegistryParser parser = new RegistryParser();
         Map<String, String> result = parser.parse(registryDir);

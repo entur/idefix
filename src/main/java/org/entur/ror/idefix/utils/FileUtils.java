@@ -1,47 +1,32 @@
 package org.entur.ror.idefix.utils;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Stream;
 
 public class FileUtils {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(FileUtils.class);
 
     private FileUtils() {
     }
 
-    public static Path findSharedDataXml(Path dir) throws IOException {
-        return Files.walk(dir)
-                .filter(p -> p.getFileName().toString().endsWith("_shared_data.xml"))
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException("No _shared_data.xml found in timetable"));
+    public static List<Path> listXmlFiles(Path path) throws IOException {
+        if (Files.isRegularFile(path)) {
+            return List.of(path);
+        }
+        try (Stream<Path> files = Files.walk(path)) {
+            return files
+                    .filter(Files::isRegularFile)
+                    .filter(p -> p.getFileName().toString().endsWith(".xml"))
+                    .sorted()
+                    .toList();
+        }
     }
 
-    public static Path findStopsXml(Path dir) throws IOException {
-        return Files.walk(dir)
-                .filter(p -> p.getFileName().toString().endsWith(".xml"))
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException("No xml found in registry"));
-    }
-
-    public static void cleanUp(Path dir) {
-        try {
-            Files.walk(dir)
-                    .sorted(Comparator.reverseOrder())
-                    .forEach(p -> {
-                        try {
-                            Files.delete(p);
-                        } catch (IOException e) {
-                            LOGGER.warn("Failed to delete temp file: {}", p, e);
-                        }
-                    });
-        } catch (IOException e) {
-            LOGGER.warn("Failed to clean up temp directory: {}", dir, e);
+    public static List<Path> listSubdirectories(Path dir) throws IOException {
+        try (Stream<Path> entries = Files.list(dir)) {
+            return entries.filter(Files::isDirectory).sorted().toList();
         }
     }
 }
