@@ -1,13 +1,13 @@
 # idefix
 
-Idefix transforms NeTEx timetable XML by replacing QuayRef references with actual ids from a stop-place registry and
-aggregates the results into one directory for OTP consumption.
+Idefix transforms NeTEx timetable XML by replacing QuayRef references with actual ids from a stop-place registry. The output
+has the same layout as the input.
 
 ## How it works
 
 Idefix takes a directory of timetable XMLs (one subdirectory per provider) and a stop-place registry XML file as input. It parses the registry to build a mapping from imported QuayRef IDs to their canonical IDs,
-then transforms all matching QuayRef elements in each provider's `_shared_data.xml`. All timetable files are written to
-the output directory prefixed with the provider's name, together with the registry file as `_stops.xml`. The providers' own `_stops.xml` files are skipped.
+then transforms all matching QuayRef elements in each provider's `_shared_data.xml`. The output directory mirrors the input: one subdirectory per provider containing the
+transformed `_shared_data.xml` and all other XML files copied unchanged, with the same file names.
 
 ## Running idefix
 

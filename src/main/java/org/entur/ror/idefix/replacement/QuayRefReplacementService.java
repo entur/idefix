@@ -36,7 +36,8 @@ public class QuayRefReplacementService {
                 String provider = providerName(providerDir);
                 LOGGER.info("--- Processing provider: {} ---", provider);
                 try {
-                    QuayRefReplacementResult result = processProvider(providerDir, provider, lookupMap, outputDir);
+                    QuayRefReplacementResult result =
+                            processProvider(providerDir, lookupMap, outputDir.resolve(provider));
                     results.put(provider, result);
                     LOGGER.info("Provider {}: {} matches, {} misses", provider, result.matches(), result.misses());
                 } catch (Exception e) {
@@ -49,7 +50,6 @@ public class QuayRefReplacementService {
             LOGGER.info("Idefix completed. {} of {} provider(s) processed. Total: {} matches, {} misses.",
                     results.size(), providerDirs.size(), totalMatches, totalMisses);
 
-            Files.copy(registryXml, outputDir.resolve("_stops.xml"), StandardCopyOption.REPLACE_EXISTING);
             LOGGER.info("Output written to {}", outputDir);
 
             return results;
@@ -61,7 +61,7 @@ public class QuayRefReplacementService {
     }
 
     private QuayRefReplacementResult processProvider(
-            Path providerDir, String provider, Map<String, String> lookupMap, Path outputDir) throws IOException {
+            Path providerDir, Map<String, String> lookupMap, Path providerOutputDir) throws IOException {
         List<Path> xmlFiles = FileUtils.listXmlFiles(providerDir);
         Path sharedDataXml = xmlFiles.stream()
                 .filter(p -> p.getFileName().toString().endsWith("_shared_data.xml"))
@@ -69,17 +69,18 @@ public class QuayRefReplacementService {
                 .orElseThrow(() -> new IllegalStateException("No _shared_data.xml found in timetable"));
         LOGGER.info("Found shared data file: {}", sharedDataXml);
 
-        // follow the pattern of the Norwegian timetable files
+        Path sharedDataOutput = providerOutputDir.resolve(providerDir.relativize(sharedDataXml));
+        Files.createDirectories(sharedDataOutput.getParent());
         QuayRefReplacementResult result = new QuayRefReplacer().replaceQuayRefs(
-                sharedDataXml, outputDir.resolve("_" + provider + "_shared_data.xml"), lookupMap);
+                sharedDataXml, sharedDataOutput, lookupMap);
 
         for (Path xmlFile : xmlFiles) {
-            String fileName = xmlFile.getFileName().toString();
-            // skip the provider's stop place file, the common stops file from the registry is used instead
-            if (xmlFile.equals(sharedDataXml) || fileName.endsWith("_stops.xml")) {
+            if (xmlFile.equals(sharedDataXml)) {
                 continue;
             }
-            Files.copy(xmlFile, outputDir.resolve(provider + "_" + fileName), StandardCopyOption.REPLACE_EXISTING);
+            Path target = providerOutputDir.resolve(providerDir.relativize(xmlFile));
+            Files.createDirectories(target.getParent());
+            Files.copy(xmlFile, target, StandardCopyOption.REPLACE_EXISTING);
         }
         return result;
     }

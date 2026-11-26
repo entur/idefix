@@ -21,7 +21,7 @@ class QuayRefReplacementServiceTest {
     Path tempDir;
 
     @Test
-    void shouldWriteProviderPrefixedFilesAndCommonStops() throws Exception {
+    void shouldWriteOutputInSameLayoutAsInput() throws Exception {
         Path timetables = tempDir.resolve("timetables");
         Path provider = Files.createDirectories(timetables.resolve("skane"));
         Files.copy(SHARED_DATA, provider.resolve("test_shared_data.xml"));
@@ -34,9 +34,11 @@ class QuayRefReplacementServiceTest {
 
         assertThat(results).containsOnlyKeys("skane");
         assertThat(results.get("skane").matches()).isGreaterThan(0);
-        assertThat(fileNames(output))
-                .containsExactlyInAnyOrder("_stops.xml", "_skane_shared_data.xml", "skane_line_1.xml");
-        assertThat(output.resolve("_stops.xml")).hasSameTextualContentAs(REGISTRY);
+        assertThat(fileNames(output)).containsExactly("skane");
+        assertThat(fileNames(output.resolve("skane")))
+                .containsExactlyInAnyOrder("test_shared_data.xml", "line_1.xml", "skane_stops.xml");
+        assertThat(output.resolve("skane/line_1.xml")).hasContent("<line/>");
+        assertThat(output.resolve("skane/skane_stops.xml")).hasContent("<stops/>");
     }
 
     @Test
