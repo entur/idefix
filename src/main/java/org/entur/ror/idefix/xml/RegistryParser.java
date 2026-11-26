@@ -24,6 +24,7 @@ public class RegistryParser extends DefaultHandler {
         try {
             SAXParserFactory factory = SAXParserFactory.newInstance();
             factory.setNamespaceAware(true);
+            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
             SAXParser saxParser = factory.newSAXParser();
 
             LOGGER.info("Parsing registry file: {}", registryXml);
